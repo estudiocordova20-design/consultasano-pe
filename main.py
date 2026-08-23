@@ -31,8 +31,8 @@ def descargar_pdf(placa: str = "W2G522"):
     
     styles = getSampleStyleSheet()
     
-    style_title = ParagraphStyle('TitleStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=18, leading=20, textColor=colors.HexColor("#0A2240"))
-    style_subtitle = ParagraphStyle('SubTitleStyle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, leading=12, textColor=colors.HexColor("#00B050"))
+    # ESTILOS DEL ENCABEZADO MEJORADOS
+    style_subtitle_bold = ParagraphStyle('SubTitleBold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, leading=13, textColor=colors.HexColor("#0A2240"))
     style_sec_header = ParagraphStyle('SecHeader', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, leading=12, textColor=colors.white)
     style_cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.HexColor("#0A2240"))
     style_cell_normal = ParagraphStyle('CellNormal', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10, textColor=colors.HexColor("#333333"))
@@ -42,21 +42,29 @@ def descargar_pdf(placa: str = "W2G522"):
 
     elements = []
 
-    # ENCABEZADO
+    # Cargar Logo Principal
+    if os.path.exists("logo_consultasano.png"):
+        header_logo = Image("logo_consultasano.png", width=190, height=75)
+    else:
+        header_logo = Paragraph("<b><font size=16 color='#0A2240'>ConsultaSano.pe</font></b>", style_cell_bold)
+
+    # ENCABEZADO CON DISEÑO FORMAL Y ELEGANTE
     header_data = [
         [
-            Paragraph("<b>ConsultaSano<font color='#00B050'>.pe</font></b>", style_title),
-            Paragraph(f"<b>FECHA EMISIÓN:</b> {datetime.now().strftime('%Y-%m-%d')}<br/><b>PLACA AUDITADA:</b> {placa_clean}", style_cell_bold)
+            header_logo,
+            Paragraph(f"<b>FECHA EMISIÓN:</b> {datetime.now().strftime('%Y-%m-%d')}<br/><b>PLACA AUDITADA:</b> {placa_clean}<br/><b>OFICINA REGISTRAL:</b> HUANCAYO", style_cell_bold)
         ],
         [
-            Paragraph("INFORME OFICIAL DE AUDITORÍA VEHICULAR INTEGRAL", style_subtitle),
-            Paragraph("<b>OFICINA REGISTRAL:</b> HUANCAYO", style_cell_normal)
+            Paragraph("INFORME OFICIAL DE AUDITORÍA VEHICULAR INTEGRAL", style_subtitle_bold),
+            Paragraph("", style_cell_normal)
         ]
     ]
-    header_table = Table(header_data, colWidths=[340, 200])
+    header_table = Table(header_data, colWidths=[330, 210])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+        ('ALIGN', (1,0), (1,0), 'RIGHT'),
+        ('SPAN', (0,1), (1,1)),  # Expande el título del informe a todo el ancho
+        ('TOPPADDING', (0,1), (0,1), 4),
     ]))
     elements.append(header_table)
     elements.append(Spacer(1, 4))
@@ -83,7 +91,7 @@ def descargar_pdf(placa: str = "W2G522"):
     elements.append(sunarp_table)
     elements.append(Spacer(1, 6))
 
-    # 2. HISTORIAL DE PROPIETARIOS Y PRECIO DE VENTA
+    # 2. HISTORIAL DE PROPIETARIOS Y VALOR DE VENTA
     elements.append(Table([[Paragraph("2. HISTORIAL DE PROPIETARIOS Y VALOR DE VENTA (SUNARP)", style_sec_header)]], colWidths=[540], style=[('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#0A2240")), ('BOTTOMPADDING', (0,0), (-1,-1), 2), ('TOPPADDING', (0,0), (-1,-1), 2)]))
     elements.append(Spacer(1, 3))
 
@@ -101,7 +109,6 @@ def descargar_pdf(placa: str = "W2G522"):
         ('BOTTOMPADDING', (0,0), (-1,-1), 3),
     ]))
 
-    # Cargar nuevo logo SUNARP ajustado
     if os.path.exists("sunarp_banner.png"):
         img_sunarp = Image("sunarp_banner.png", width=100, height=60)
     elif os.path.exists("sunarp_banner.jpg"):
@@ -118,7 +125,7 @@ def descargar_pdf(placa: str = "W2G522"):
 
     elements.append(Spacer(1, 6))
 
-    # 3. AUDITORÍA CON PANEL DE ENTIDADES OFICIALES
+    # 3. AUDITORÍA AMPLIADA CON SEMÁFORO DE RIESGO
     elements.append(Table([[Paragraph("3. SISTEMA DE AUDITORÍA LEGAL Y EVALUACIÓN DE RIESGO MULTI-ENTIDAD", style_sec_header)]], colWidths=[540], style=[('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#0A2240")), ('BOTTOMPADDING', (0,0), (-1,-1), 2), ('TOPPADDING', (0,0), (-1,-1), 2)]))
     elements.append(Spacer(1, 3))
 
@@ -143,7 +150,6 @@ def descargar_pdf(placa: str = "W2G522"):
         ('ALIGN', (3,0), (3,-1), 'CENTER'),
     ]))
 
-    # Cargar panel vertical de Entidades Oficiales
     if os.path.exists("logos_entidades.png"):
         img_logos = Image("logos_entidades.png", width=110, height=160)
         grid_sec = Table([[t_sec, img_logos]], colWidths=[420, 120])
