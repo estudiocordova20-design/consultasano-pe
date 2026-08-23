@@ -31,14 +31,14 @@ def descargar_pdf(placa: str = "W2G522"):
     
     styles = getSampleStyleSheet()
     
-    # ESTILOS DEL ENCABEZADO MEJORADOS
+    # ESTILOS REVISADOS Y OPTIMIZADOS
     style_subtitle_burgundy = ParagraphStyle(
         'SubTitleBurgundy', 
         parent=styles['Normal'], 
         fontName='Helvetica-Bold', 
         fontSize=11, 
         leading=14, 
-        textColor=colors.HexColor("#800020"), # COLOR GUINDO OSCURO
+        textColor=colors.HexColor("#800020"), 
         alignment=1 # CENTRADO
     )
     
@@ -51,17 +51,18 @@ def descargar_pdf(placa: str = "W2G522"):
 
     elements = []
 
-    # Cargar Logo Principal con mayor altura y ancho para legibilidad
+    # Cargar Logo Principal
     if os.path.exists("logo_consultasano.png"):
-        header_logo = Image("logo_consultasano.png", width=240, height=110)
+        header_logo = Image("logo_consultasano.png", width=250, height=115)
     else:
         header_logo = Paragraph("<b><font size=16 color='#0A2240'>ConsultaSano.pe</font></b>", style_cell_bold)
 
-    # ENCABEZADO CON DISEÑO FORMAL Y CENTRADO
+    # ENCABEZADO CON POSICIONES INVERTIDAS
+    # Columna 0: Datos de emisión (Izquierda) | Columna 1: Logo (Derecha)
     header_data = [
         [
-            header_logo,
-            Paragraph(f"<b>FECHA EMISIÓN:</b> {datetime.now().strftime('%Y-%m-%d')}<br/><b>PLACA AUDITADA:</b> {placa_clean}<br/><b>OFICINA REGISTRAL:</b> HUANCAYO", style_cell_bold)
+            Paragraph(f"<b>FECHA EMISIÓN:</b> {datetime.now().strftime('%Y-%m-%d')}<br/><b>PLACA AUDITADA:</b> {placa_clean}<br/><b>OFICINA REGISTRAL:</b> HUANCAYO", style_cell_bold),
+            header_logo
         ],
         [
             Paragraph("INFORME OFICIAL DE AUDITORÍA Y SEGUIMIENTO DE INFRACCIONES VEHICULAR", style_subtitle_burgundy),
@@ -69,11 +70,12 @@ def descargar_pdf(placa: str = "W2G522"):
         ]
     ]
     
-    header_table = Table(header_data, colWidths=[310, 230])
+    header_table = Table(header_data, colWidths=[230, 310])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('ALIGN', (0,0), (0,0), 'LEFT'),
         ('ALIGN', (1,0), (1,0), 'RIGHT'),
-        ('SPAN', (0,1), (1,1)), # Expande el título del informe a todo el ancho centrado
+        ('SPAN', (0,1), (1,1)), # Título centrado abarcando el ancho total
         ('TOPPADDING', (0,1), (0,1), 6),
         ('BOTTOMPADDING', (0,1), (0,1), 4),
     ]))
@@ -170,13 +172,13 @@ def descargar_pdf(placa: str = "W2G522"):
     else:
         elements.append(t_sec)
 
-    elements.append(Spacer(1, 6))
+    elements.append(Spacer(1, 4))
 
-    # 4. BANNER PUBLICITARIO
+    # 4. BANNER PUBLICITARIO AMPLIADO (ESTUDIO CÓRDOVA ABOGADOS)
     elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#CCCCCC"), spaceAfter=4))
     
     if os.path.exists("banner_footer.png"):
-        banner_img = Image("banner_footer.png", width=540, height=140)
+        banner_img = Image("banner_footer.png", width=540, height=180)
         elements.append(banner_img)
 
     # CONSTRUIR PDF
