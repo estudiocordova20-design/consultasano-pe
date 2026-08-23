@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConsultaSano.pe | Revisa tu placa. Compra seguro.</title>
+    <title>ConsultaSano.pe | Verificación Vehicular Instantánea</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .bg-brand-blue { background-color: #0A2240; }
@@ -11,13 +11,14 @@
         .text-brand-green { color: #00B050; }
         .bg-brand-green { background-color: #00B050; }
         .bg-brand-yellow { background-color: #FFB800; }
+        .blur-locked { filter: blur(4px); user-select: none; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col justify-between font-sans">
 
-    <!-- Header / Branding -->
+    <!-- Header -->
     <header class="bg-white border-b border-slate-200 p-4 text-center shadow-sm">
-        <div class="max-w-md mx-auto flex flex-col items-center">
+        <div class="max-w-md mx-auto">
             <h1 class="text-3xl font-black tracking-tight text-brand-blue">
                 Consulta<span class="text-brand-green">Sano</span><span class="text-slate-900 text-xl">.pe</span>
             </h1>
@@ -25,44 +26,157 @@
         </div>
     </header>
 
-    <!-- Buscador Principal -->
-    <main class="max-w-md mx-auto p-5 w-full my-auto">
+    <main class="max-w-md mx-auto p-4 w-full my-auto">
         
-        <div class="bg-brand-blue text-white text-xs py-1.5 px-3 rounded-full text-center font-semibold mb-6 flex items-center justify-center gap-2 shadow-sm">
-            <span>🇵🇪</span>
-            <span>Información oficial • Rápido • Confiable</span>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200 text-center">
+        <!-- PASO 1: FORMULARIO INICIAL -->
+        <div id="step-1" class="bg-white p-6 rounded-2xl shadow-xl border border-slate-200 text-center">
+            <div class="bg-brand-blue text-white text-xs py-1.5 px-3 rounded-full text-center font-semibold mb-4 inline-block">
+                🇵🇪 Búsqueda Gratuita en Fuentes Oficiales
+            </div>
+            
             <h2 class="text-xl font-extrabold text-brand-blue mb-1">¿Vas a comprar un auto usado?</h2>
-            <p class="text-xs text-slate-500 mb-5">Verifica SUNARP, DIROVE, SOAT, Revisiones Técnicas y Papeletas.</p>
+            <p class="text-xs text-slate-500 mb-5">Verifica los datos básicos del vehículo al instante y sin costo.</p>
 
-            <form action="/consultar" method="get" class="space-y-4">
+            <form onsubmit="procesarConsultaGratis(event)" class="space-y-4">
                 <div>
-                    <label class="block text-left text-xs font-bold text-brand-blue mb-1">INGRESA LA PLACA (EJ. W2G542):</label>
-                    <input type="text" name="placa" placeholder="W2G542" maxlength="6" required class="w-full text-center uppercase font-mono text-3xl p-3 rounded-xl bg-slate-50 border-2 border-slate-300 focus:border-brand-green outline-none font-bold tracking-widest text-brand-blue">
+                    <label class="block text-left text-xs font-bold text-brand-blue mb-1">INGRESA LA PLACA:</label>
+                    <input type="text" id="input-placa" placeholder="W2G542" maxlength="6" required class="w-full text-center uppercase font-mono text-3xl p-3 rounded-xl bg-slate-50 border-2 border-slate-300 focus:border-brand-green outline-none font-bold tracking-widest text-brand-blue">
                 </div>
 
                 <div>
-                    <label class="block text-left text-xs font-bold text-brand-blue mb-1">NÚMERO DE WHATSAPP PARA EL PDF:</label>
-                    <input type="tel" name="whatsapp" placeholder="987654321" required class="w-full text-center font-mono text-lg p-3 rounded-xl bg-slate-50 border-2 border-slate-300 focus:border-brand-green outline-none font-bold text-slate-700">
+                    <label class="block text-left text-xs font-bold text-brand-blue mb-1">NÚMERO DE WHATSAPP:</label>
+                    <input type="tel" id="input-phone" placeholder="987654321" required class="w-full text-center font-mono text-lg p-3 rounded-xl bg-slate-50 border-2 border-slate-300 focus:border-brand-green outline-none font-bold text-slate-700">
                 </div>
 
-                <button type="submit" class="w-full bg-brand-yellow hover:bg-amber-500 text-brand-blue font-black py-4 rounded-xl text-lg shadow-lg transition duration-200 flex items-center justify-center gap-2">
-                    <span>🔍 CONSULTAR AHORA (S/ 9.90)</span>
+                <button type="submit" class="w-full bg-brand-blue hover:bg-slate-800 text-white font-black py-4 rounded-xl text-lg shadow-lg transition flex items-center justify-center gap-2">
+                    <span>🔍 CONSULTAR PLACA</span>
                 </button>
             </form>
         </div>
 
-        <div class="mt-6 grid grid-cols-3 gap-2 text-center text-xs font-semibold text-slate-600">
-            <div class="p-2.5 bg-white rounded-xl shadow-sm border border-slate-200">🔍 Partida SUNARP</div>
-            <div class="p-2.5 bg-white rounded-xl shadow-sm border border-slate-200">🛡️ Alerta Robo PNP</div>
-            <div class="p-2.5 bg-white rounded-xl shadow-sm border border-slate-200">✅ RTV, GNV & Multas</div>
+        <!-- PASO 2: VISTA PREVIA GRATUITA + BLOQUEO FREEMIUM -->
+        <div id="step-2" class="hidden space-y-4">
+            
+            <!-- Resumen Gratuito Desbloqueado -->
+            <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+                    <span class="text-xs font-extrabold text-brand-green bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                        ✓ Vehículo Encontrado
+                    </span>
+                    <span id="res-placa" class="font-mono font-black text-xl text-brand-blue">PLACA</span>
+                </div>
+
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Datos Básicos SUNARP (Gratis)</h3>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Marca:</strong> <span id="res-marca">CHERY</span></div>
+                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Modelo:</strong> <span id="res-modelo">TIGGO</span></div>
+                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Color:</strong> <span id="res-color">NEGRO AZABACHE</span></div>
+                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Año Fab:</strong> <span id="res-anio">2013</span></div>
+                </div>
+            </div>
+
+            <!-- Secciones Bloqueadas (Efecto Blur) -->
+            <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-200 relative overflow-hidden">
+                <h3 class="text-xs font-bold text-brand-blue uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <span>👥 Propietarios y Tracto Sucesivo</span>
+                    <span class="text-amber-500 text-sm">🔒</span>
+                </h3>
+                
+                <div class="blur-locked text-xs space-y-1.5 opacity-60">
+                    <p><strong>Propietario Actual:</strong> CORDOVA PALOMINO R****** S********</p>
+                    <p><strong>Fecha Propiedad:</strong> 28/11/2022</p>
+                    <p><strong>Partida Registral:</strong> 60548*** (Sede Huancayo)</p>
+                    <p><strong>Trazabilidad:</strong> 2 Transferencias registradas</p>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100">
+                    <h3 class="text-xs font-bold text-brand-blue uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span>⚠️ Historial de Papeletas y Riesgos</span>
+                        <span class="text-amber-500 text-sm">🔒</span>
+                    </h3>
+                    <div class="blur-locked text-xs space-y-1.5 opacity-60">
+                        <p><strong>SUTRAN:</strong> 0 Papeletas pendientes</p>
+                        <p><strong>SAT Local:</strong> Se encontraron registros pendientes de verificación</p>
+                        <p><strong>Alerta DIROVE:</strong> Sin orden de captura vigente</p>
+                    </div>
+                </div>
+
+                <!-- Call To Action para Desbloquear -->
+                <div class="mt-5 bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-200 text-center">
+                    <p class="text-xs font-extrabold text-amber-900 mb-1">¿Quieres ver la auditoría completa?</p>
+                    <p class="text-xs text-amber-700 mb-3">Obtén el historial de propietarios, montos de transferencia, multas detalladas y el reporte PDF en tu WhatsApp.</p>
+                    
+                    <button onclick="irAPagar()" class="w-full bg-brand-yellow hover:bg-amber-500 text-brand-blue font-black py-3.5 rounded-xl text-base shadow-lg transition animate-pulse">
+                        🔓 DESBLOQUEAR INFORME COMPLETO (S/ 9.90)
+                    </button>
+                </div>
+            </div>
         </div>
+
+        <!-- PASO 3: PANTALLA DE PAGO YAPE / PLIN -->
+        <div id="step-3" class="hidden bg-white p-6 rounded-2xl shadow-xl border border-slate-200 text-center">
+            <h2 class="text-lg font-extrabold text-brand-blue mb-1">Desbloquea el Reporte Oficial</h2>
+            <p class="text-xs text-slate-500 mb-4">Escanea el QR con Yape o Plin para recibir la auditoría completa</p>
+            
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4 inline-block w-full">
+                <p class="text-xs text-slate-500 font-bold mb-1">Monto a pagar: <span class="text-brand-green text-base font-black">S/ 9.90</span></p>
+                <div class="w-48 h-48 bg-slate-200 mx-auto rounded-lg flex items-center justify-center text-slate-400 font-bold border-2 border-dashed border-slate-300 my-2">
+                    [ AQUÍ TU QR YAPE/PLIN ]
+                </div>
+                <p class="text-xs font-bold text-brand-blue mt-2">Titular: ConsultaSano PE</p>
+            </div>
+
+            <button onclick="confirmarPago()" class="w-full bg-brand-green hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-base shadow-md transition">
+                ✅ Ya realicé el pago
+            </button>
+        </div>
+
+        <!-- PASO 4: CONFIRMACIÓN Y ENVÍO A WHATSAPP -->
+        <div id="step-4" class="hidden bg-white p-6 rounded-2xl shadow-xl border border-slate-200 text-center">
+            <div class="text-5xl mb-2">🚀</div>
+            <h2 class="text-xl font-extrabold text-brand-blue mb-2">¡Generando Auditoría Completa!</h2>
+            <p class="text-xs text-slate-600 mb-4">Estamos compilando la Ficha SUNARP, Trazabilidad, SUTRAN, CITV y SATs Municipales. En menos de 2 minutos lo recibirás en tu WhatsApp.</p>
+            <div class="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-bold border border-emerald-200">
+                📱 Enviar al número: <span id="lbl-phone" class="underline"></span>
+            </div>
+        </div>
+
     </main>
 
     <footer class="p-4 text-center text-xs text-slate-400 bg-white border-t border-slate-200">
         © 2026 ConsultaSano.pe - Todos los derechos reservados.
     </footer>
+
+    <script>
+        let currentPlaca = "";
+        let currentPhone = "";
+
+        function procesarConsultaGratis(e) {
+            e.preventDefault();
+            currentPlaca = document.getElementById('input-placa').value.toUpperCase().trim();
+            currentPhone = document.getElementById('input-phone').value.trim();
+
+            document.getElementById('res-placa').innerText = currentPlaca;
+
+            // Transición a la vista previa gratuita
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+        }
+
+        function irAPagar() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-3').classList.remove('hidden');
+        }
+
+        function confirmarPago() {
+            document.getElementById('lbl-phone').innerText = currentPhone;
+
+            document.getElementById('step-3').classList.add('hidden');
+            document.getElementById('step-4').classList.remove('hidden');
+
+            // Notificar al servidor en segundo plano
+            fetch(`/consultar?placa=${currentPlaca}&whatsapp=${currentPhone}`);
+        }
+    </script>
 </body>
 </html>
