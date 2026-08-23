@@ -131,14 +131,17 @@
             </button>
         </div>
 
-        <!-- PASO 4: CONFIRMACIÓN Y ENVÍO A WHATSAPP -->
+        <!-- PASO 4: CONFIRMACIÓN Y DESCARGA DIRECTA -->
         <div id="step-4" class="hidden bg-white p-6 rounded-2xl shadow-xl border border-slate-200 text-center">
-            <div class="text-5xl mb-2">🚀</div>
-            <h2 class="text-xl font-extrabold text-brand-blue mb-2">¡Generando Auditoría Completa!</h2>
-            <p class="text-xs text-slate-600 mb-4">Estamos compilando la Ficha SUNARP, Trazabilidad, SUTRAN, CITV y SATs Municipales. En menos de 2 minutos lo recibirás en tu WhatsApp.</p>
-            <div class="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-bold border border-emerald-200">
-                📱 Enviar al número: <span id="lbl-phone" class="underline"></span>
-            </div>
+            <div class="text-5xl mb-2">🎉</div>
+            <h2 class="text-xl font-extrabold text-brand-blue mb-2">¡Auditoría Generada con Éxito!</h2>
+            <p class="text-xs text-slate-600 mb-4">Tu informe PDF ha sido procesado con la información oficial de SUNARP, SÍGUELO, CITV y SUTRAN.</p>
+            
+            <a id="btn-download" href="#" target="_blank" class="w-full bg-brand-green hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-base shadow-lg transition flex items-center justify-center gap-2 mb-3">
+                📥 DESCARGAR INFORME PDF
+            </a>
+            
+            <p class="text-xs text-slate-400">También lo hemos programado para enviarse al WhatsApp indicado.</p>
         </div>
 
     </main>
@@ -170,12 +173,12 @@
 
         function confirmarPago() {
             document.getElementById('lbl-phone').innerText = currentPhone;
+            
+            // Asignar enlace directo de descarga en el botón
+            document.getElementById('btn-download').href = `/descargar-pdf?placa=${currentPlaca}`;
 
             document.getElementById('step-3').classList.add('hidden');
             document.getElementById('step-4').classList.remove('hidden');
-
-            // Notificar al servidor en segundo plano
-            fetch(`/consultar?placa=${currentPlaca}&whatsapp=${currentPhone}`);
         }
     </script>
 </body>
