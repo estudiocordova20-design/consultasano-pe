@@ -1,6 +1,5 @@
 import io
 import os
-import requests
 from fastapi import FastAPI, Response
 from fastapi.responses import HTMLResponse
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
@@ -8,6 +7,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
+# Importación de la lógica de consulta multihilo
 from servicios_vehiculares import consultar_datos_vehiculo
 
 app = FastAPI()
@@ -19,7 +19,7 @@ def index():
 
 @app.get("/descargar-pdf")
 def descargar_pdf(placa: str = "AKI175"):
-    # 1. Obtener datos dinámicos en tiempo real
+    # 1. Obtiene la información en tiempo real según la placa consultada
     datos = consultar_datos_vehiculo(placa)
     
     buffer = io.BytesIO()
@@ -32,26 +32,25 @@ def descargar_pdf(placa: str = "AKI175"):
     story = []
 
     # ==========================================
-    # PÁGINA 1: REPORTE VEHICULAR Y AUDITORÍA
+    # PÁGINA 1: LOGOS, DATOS SUNARP Y AUDITORÍA
     # ==========================================
 
-    # Encabezado con Logos
-    if os.path.exists("logo_consultasano.png") and os.path.exists("logo_estudio.png"):
-        try:
-            logo_izq = Image("logo_consultasano.png", width=140, height=40)
-            logo_der = Image("logo_estudio.png", width=120, height=40)
-            header_table = Table([[logo_izq, logo_der]], colWidths=[270, 270])
-            header_table.setStyle(TableStyle([
-                ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-                ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ]))
-            story.append(header_table)
-            story.append(Spacer(1, 10))
-        except Exception as e:
-            print(f"Error cargando logos: {e}")
+    # Encabezado con Logos superiores
+    try:
+        logo_izq = Image("logo_consultasano.png", width=140, height=40)
+        logo_der = Image("logo_estudio.png", width=120, height=40)
+        header_table = Table([[logo_izq, logo_der]], colWidths=[270, 270])
+        header_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        story.append(header_table)
+        story.append(Spacer(1, 10))
+    except Exception as e:
+        print(f"Aviso al cargar logos: {e}")
 
-    # Título principal
+    # Título del Reporte
     titulo_style = ParagraphStyle(
         'TituloReporte',
         parent=styles['Heading1'],
@@ -62,7 +61,7 @@ def descargar_pdf(placa: str = "AKI175"):
     story.append(Paragraph(f"<b>REPORTE VEHICULAR CONSOLIDADO - PLACA {datos['placa']}</b>", titulo_style))
     story.append(Spacer(1, 10))
 
-    # Tabla 1: SUNARP (Datos en Vivo)
+    # Sección 1: Datos Registrales SUNARP (Traídos dinámicamente)
     story.append(Paragraph("<b>1. DATOS REGISTRALES (SUNARP)</b>", styles['Heading2']))
     tabla_sunarp_data = [
         ["Oficina Registral", datos["oficina_registral"], "Marca", datos["marca"]],
@@ -83,7 +82,7 @@ def descargar_pdf(placa: str = "AKI175"):
     story.append(t_sunarp)
     story.append(Spacer(1, 12))
 
-    # Tabla 2: Auditoría en Tiempo Real
+    # Sección 2: Auditoría en Tiempo Real
     story.append(Paragraph("<b>2. AUDITORÍA EN TIEMPO REAL Y ALERTAS</b>", styles['Heading2']))
     tabla_auditoria_data = [["Módulo / Verificación", "Entidad / Fuente", "Resultado / Estado", "Nivel Riesgo"]]
     for item in datos["auditoria"]:
@@ -101,35 +100,32 @@ def descargar_pdf(placa: str = "AKI175"):
     ]))
     story.append(t_auditoria)
 
-    # Banner Footer Página 1
-    if os.path.exists("banner_footer.png"):
-        try:
-            story.append(Spacer(1, 10))
-            story.append(Image("banner_footer.png", width=540, height=45))
-        except Exception:
-            pass
+    # Banner Inferior de la Página 1
+    try:
+        story.append(Spacer(1, 10))
+        story.append(Image("banner_footer.png", width=540, height=45))
+    except Exception:
+        pass
 
     # ==========================================
-    # SALTO A PÁGINA 2: PUBLICIDAD Y SERVICIOS
+    # PÁGINA 2: SALTO DE PÁGINA E INFOGRAFÍAS
     # ==========================================
     story.append(PageBreak())
 
-    # Banner 1/3: Estudio Córdova
-    if os.path.exists("banner_estudio_cordova.png"):
-        try:
-            story.append(Image("banner_estudio_cordova.png", width=540, height=210))
-            story.append(Spacer(1, 10))
-        except Exception as e:
-            print(f"Error cargando banner estudio: {e}")
+    # Banner Estudio Córdova (Proporción 1/3)
+    try:
+        story.append(Image("banner_estudio_cordova.png", width=540, height=210))
+        story.append(Spacer(1, 10))
+    except Exception as e:
+        print(f"Aviso al cargar banner estudio: {e}")
 
-    # Infografía 2/3: Servicios Vehiculares y Legales
-    if os.path.exists("infografia_servicios.png"):
-        try:
-            story.append(Image("infografia_servicios.png", width=540, height=430))
-        except Exception as e:
-            print(f"Error cargando infografía: {e}")
+    # Infografía de Servicios Vehiculares y Legales (Proporción 2/3)
+    try:
+        story.append(Image("infografia_servicios.png", width=540, height=430))
+    except Exception as e:
+        print(f"Aviso al cargar infografía servicios: {e}")
 
-    # Construir PDF
+    # Construcción y retorno del PDF
     doc.build(story)
     buffer.seek(0)
     return Response(content=buffer.getvalue(), media_type="application/pdf")
