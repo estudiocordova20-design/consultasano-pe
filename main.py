@@ -37,10 +37,8 @@ def descargar_pdf(placa: str = "W2G522"):
     style_cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.HexColor("#0A2240"))
     style_cell_normal = ParagraphStyle('CellNormal', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10, textColor=colors.HexColor("#333333"))
     
-    # ESTILOS DE SEMÁFORO DE RIESGO
+    # SEMÁFORO DE RIESGO
     style_risk_low = ParagraphStyle('RiskLow', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.HexColor("#008000"))
-    style_risk_med = ParagraphStyle('RiskMed', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.HexColor("#D97706"))
-    style_risk_high = ParagraphStyle('RiskHigh', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.HexColor("#DC2626"))
 
     elements = []
 
@@ -103,17 +101,24 @@ def descargar_pdf(placa: str = "W2G522"):
         ('BOTTOMPADDING', (0,0), (-1,-1), 3),
     ]))
 
-    if os.path.exists("sunarp_banner.jpg"):
-        img_sunarp = Image("sunarp_banner.jpg", width=110, height=65)
+    # Cargar nuevo logo SUNARP ajustado
+    if os.path.exists("sunarp_banner.png"):
+        img_sunarp = Image("sunarp_banner.png", width=100, height=60)
+    elif os.path.exists("sunarp_banner.jpg"):
+        img_sunarp = Image("sunarp_banner.jpg", width=100, height=60)
+    else:
+        img_sunarp = None
+
+    if img_sunarp:
         grid_sunarp = Table([[t_prop, img_sunarp]], colWidths=[420, 120])
-        grid_sunarp.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'RIGHT')]))
+        grid_sunarp.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'CENTER')]))
         elements.append(grid_sunarp)
     else:
         elements.append(t_prop)
 
     elements.append(Spacer(1, 6))
 
-    # 3. AUDITORÍA AMPLIADA CON COLUMNA DE RIESGO SEMÁFORO
+    # 3. AUDITORÍA CON PANEL DE ENTIDADES OFICIALES
     elements.append(Table([[Paragraph("3. SISTEMA DE AUDITORÍA LEGAL Y EVALUACIÓN DE RIESGO MULTI-ENTIDAD", style_sec_header)]], colWidths=[540], style=[('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#0A2240")), ('BOTTOMPADDING', (0,0), (-1,-1), 2), ('TOPPADDING', (0,0), (-1,-1), 2)]))
     elements.append(Spacer(1, 3))
 
@@ -138,26 +143,23 @@ def descargar_pdf(placa: str = "W2G522"):
         ('ALIGN', (3,0), (3,-1), 'CENTER'),
     ]))
 
+    # Cargar panel vertical de Entidades Oficiales
     if os.path.exists("logos_entidades.png"):
-        img_logos = Image("logos_entidades.png", width=110, height=110)
+        img_logos = Image("logos_entidades.png", width=110, height=160)
         grid_sec = Table([[t_sec, img_logos]], colWidths=[420, 120])
-        grid_sec.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'RIGHT')]))
+        grid_sec.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'CENTER')]))
         elements.append(grid_sec)
     else:
         elements.append(t_sec)
 
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 6))
 
-    # 4. BANNER PUBLICITARIO DE ESTUDIO CÓRDOVA ABOGADOS
+    # 4. BANNER PUBLICITARIO
     elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#CCCCCC"), spaceAfter=4))
     
     if os.path.exists("banner_footer.png"):
-        banner_img = Image("banner_footer.png", width=540, height=155)
+        banner_img = Image("banner_footer.png", width=540, height=140)
         elements.append(banner_img)
-    else:
-        # Resguardo en texto en caso de que falte el archivo de imagen
-        fallback_data = [[Paragraph("<b>ESTUDIO CÓRDOVA ABOGADOS</b><br/>Paseo la Breña 529 - Huancayo | WhatsApp: 990 997 973", style_sec_header)]]
-        elements.append(Table(fallback_data, colWidths=[540], style=[('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#0A2240")), ('ALIGN', (0,0), (-1,-1), 'CENTER')]))
 
     # CONSTRUIR PDF
     doc.build(elements)
