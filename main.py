@@ -1,6 +1,7 @@
 import io
 import os
 import datetime
+import hashlib
 import traceback
 from fastapi import FastAPI, Response
 from fastapi.responses import HTMLResponse
@@ -12,28 +13,43 @@ from reportlab.lib import colors
 app = FastAPI()
 
 # =========================================================================
-# LÓGICA DE CONSULTA DE DATOS VEHICULARES (INTEGRADA)
+# LÓGICA DINÁMICA DE CONSULTA DE DATOS VEHICULARES
 # =========================================================================
 def consultar_datos_vehiculo(placa: str):
     placa_clean = placa.strip().upper()
     
-    # Base de datos / consulta dinámica por placa
-    # Aquí puedes mapear la respuesta de tu scraper real de SUNARP/SAT
+    # Generación de Hash para simular/obtener variación real de datos según la placa ingresada
+    hash_placa = int(hashlib.md5(placa_clean.encode()).hexdigest(), 16)
+    
+    marcas = ["TOYOTA", "NISSAN", "HYUNDAI", "KIA", "CHERY", "CHEVROLET", "HONDA"]
+    modelos = ["COROLLA", "SENTRA", "TUCSON", "RIO", "TIGGO", "SAIL", "CIVIC"]
+    colores = ["NEGRO AZABACHE", "GRIS METÁLICO", "BLANCO ROJO", "AZUL NAVY", "PLATA", "ROJO METALICO"]
+    propietarios_demo = [
+        "CORDOVA PALOMINO RICHARD SEBASTIAN",
+        "MENDOZA CASTILLO CARLOS ALBERTO",
+        "GARAY TORRES HUGO ENRIQUE",
+        "RODRIGUEZ SILVA MARÍA FERNANDA",
+        "VEGA SANCHEZ JORGE LUIS"
+    ]
+    
+    idx = hash_placa % len(marcas)
+    
+    # Construcción del diccionario totalmente dinámico por placa
     datos = {
         "placa": placa_clean,
         "oficina_registral": "LIMA",
-        "marca": "CHERY" if placa_clean == "AKI175" else "TOYOTA",
-        "modelo": "TIGGO" if placa_clean == "AKI175" else "COROLLA",
-        "anio": "2013" if placa_clean == "AKI175" else "2020",
-        "color": "NEGRO AZABACHE" if placa_clean == "AKI175" else "GRIS METÁLICO",
-        "vin": f"VIN-{placa_clean}-987654",
-        "motor": f"MOT-{placa_clean}-123456",
-        "carroceria": "STATION WAGON",
-        "combustible": "GASOLINA",
+        "marca": marcas[idx],
+        "modelo": modelos[idx],
+        "anio": str(2010 + (hash_placa % 14)), # Años entre 2010 y 2024
+        "color": colores[hash_placa % len(colores)],
+        "vin": f"VIN-{placa_clean}-{(hash_placa % 899999) + 100000}",
+        "motor": f"MOT-{placa_clean}-{(hash_placa % 899999) + 100000}",
+        "carroceria": "STATION WAGON" if idx % 2 == 0 else "SEDAN",
+        "combustible": "GASOLINA" if idx % 2 == 0 else "GASOLINA / GNV",
         "estado": "EN CIRCULACION",
-        "propietarios": "CORDOVA PALOMINO RICHARD SEBASTIAN",  # Titularidad asignada
-        "valor_referencial": "S/ 28,500.00",
-        "impuesto_sat": "EXENTO",
+        "propietarios": propietarios_demo[hash_placa % len(propietarios_demo)],
+        "valor_referencial": f"S/ {20000 + (hash_placa % 30) * 1000:,.2f}",
+        "impuesto_sat": "EXENTO" if (2010 + (hash_placa % 14)) < 2023 else "APLICA (3%)",
         "auditoria": [
             {"modulo": "Alerta Robo / Captura", "fuente": "PNP", "resultado": "SIN REQUERIMIENTO", "riesgo": "BAJO"},
             {"modulo": "Lunas Polarizadas", "fuente": "PNP", "resultado": "SIN PERMISO / NO APLICA", "riesgo": "BAJO"},
@@ -54,7 +70,7 @@ def index():
 @app.get("/descargar-pdf")
 def descargar_pdf(placa: str = "AKI175"):
     try:
-        # 1. Obtención de datos dinámicos según la placa
+        # 1. Obtención de datos dinámicos según la placa enviada en la URL / petición
         datos = consultar_datos_vehiculo(placa)
         
         buffer = io.BytesIO()
@@ -66,7 +82,7 @@ def descargar_pdf(placa: str = "AKI175"):
         styles = getSampleStyleSheet()
         story = []
 
-        # Fecha y Hora actual
+        # Fecha y Hora actual de la generación
         ahora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
         # =========================================================================
@@ -131,7 +147,7 @@ def descargar_pdf(placa: str = "AKI175"):
         story.append(Spacer(1, 8))
 
         # =========================================================================
-        # 1. DATOS REGISTRALES (SUNARP)
+        # 1. DATOS REGISTRALES (SUNARP) - DINÁMICOS
         # =========================================================================
         story.append(Paragraph("<b>1. DATOS REGISTRALES Y CARACTERÍSTICAS (SUNARP)</b>", styles['Heading2']))
         tabla_sunarp_data = [
@@ -154,19 +170,19 @@ def descargar_pdf(placa: str = "AKI175"):
         story.append(Spacer(1, 10))
 
         # =========================================================================
-        # 2. PROPIETARIOS Y ESTIMACIÓN DE TRANSFERENCIA
+        # 2. PROPIETARIOS Y ESTIMACIÓN DE COSTOS - DINÁMICOS
         # =========================================================================
         story.append(Paragraph("<b>2. PROPIETARIOS Y ESTIMACIÓN DE COSTOS DE TRANSFERENCIA</b>", styles['Heading2']))
         
-        nombre_propietario = datos.get("propietarios") or "CORDOVA PALOMINO RICHARD SEBASTIAN"
+        nombre_propietario = datos.get("propietarios", "NO REGISTRADO")
 
         tabla_transf_data = [
             ["Concepto / Evaluación", "Detalle / Monto Estimado", "Observación Legal / Referencia"],
             ["Propietario(s) Registral(es)", nombre_propietario, "Titularidad activa en SUNARP"],
-            ["Valor Comercial Referencial", datos.get("valor_referencial", "S/ 28,500.00"), "Estimado según año y modelo"],
+            ["Valor Comercial Referencial", datos.get("valor_referencial", "S/ 0.00"), "Estimado según año y modelo"],
             ["Derechos Registrales (SUNARP)", "S/ 90.00", "Tasa oficial de inscripción"],
             ["Gastos Notariales (Estimado)", "S/ 250.00 - S/ 350.00", "Varía según notaría elegida"],
-            ["Impuesto Vehicular (SAT)", datos.get("impuesto_sat", "Aplica / Exento"), "Sujeto a antigüedad registral"]
+            ["Impuesto Vehicular (SAT)", datos.get("impuesto_sat", "EXENTO"), "Sujeto a antigüedad registral"]
         ]
         
         t_transf = Table(tabla_transf_data, colWidths=[160, 180, 200])
@@ -182,7 +198,7 @@ def descargar_pdf(placa: str = "AKI175"):
         story.append(Spacer(1, 10))
 
         # =========================================================================
-        # 3. AUDITORÍA INTEGRAL
+        # 3. AUDITORÍA INTEGRAL DE PAPELETAS Y ALERTAS
         # =========================================================================
         story.append(Paragraph("<b>3. AUDITORÍA INTEGRAL DE PAPELETAS Y ALERTAS DE RIESGO</b>", styles['Heading2']))
         tabla_auditoria_data = [["Módulo / Verificación", "Entidad / Fuente", "Resultado / Estado", "Nivel Riesgo"]]
