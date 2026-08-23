@@ -16,37 +16,46 @@ def home():
         return f.read()
 
 @app.get("/descargar-pdf")
-def descargar_pdf(placa: str = "W2G522"):
-    # 1. Consultar datos en tiempo real (SUNARP, SUTRAN, SAT, MTC, APESEG)
+def descargar_pdf(placa: str = "AKI175"):
+    # 1. Traer datos en tiempo real de servicios_vehiculares.py
     datos = consultar_datos_vehiculo(placa)
     
-    # 2. Configurar buffer y documento PDF
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter,
-        rightMargin=36,
-        leftMargin=36,
-        topMargin=36,
-        bottomMargin=36
+        rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36
     )
-    
     styles = getSampleStyleSheet()
     story = []
 
-    # 3. Encabezado / Título
+    # 2. Agregar Logos (Encabezado)
+    try:
+        logo_izq = Image("logo_consultasano.png", width=140, height=40)
+        logo_der = Image("logo_estudio.png", width=120, height=40)
+        tabla_encabezado = Table([[logo_izq, logo_der]], colWidths=[270, 270])
+        tabla_encabezado.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        story.append(tabla_encabezado)
+        story.append(Spacer(1, 15))
+    except Exception as e:
+        print(f"No se pudieron cargar los logos: {e}")
+
+    # 3. Título del Reporte
     titulo_style = ParagraphStyle(
         'TituloReporte',
         parent=styles['Heading1'],
-        fontSize=16,
-        leading=20,
+        fontSize=15, leading=18,
         textColor=colors.HexColor("#1A365D"),
         alignment=1
     )
     story.append(Paragraph(f"<b>REPORTE VEHICULAR CONSOLIDADO - PLACA {datos['placa']}</b>", titulo_style))
     story.append(Spacer(1, 12))
 
-    # 4. Tabla 1: Datos de SUNARP
+    # 4. Tabla 1: Datos Registrales SUNARP
     story.append(Paragraph("<b>1. DATOS REGISTRALES (SUNARP)</b>", styles['Heading2']))
     tabla_sunarp_data = [
         ["Oficina Registral", datos["oficina_registral"], "Marca", datos["marca"]],
@@ -67,17 +76,11 @@ def descargar_pdf(placa: str = "W2G522"):
     story.append(t_sunarp)
     story.append(Spacer(1, 14))
 
-    # 5. Tabla 2: Auditoría en Tiempo Real (SUTRAN, SAT, MTC, PNP, APESEG)
+    # 5. Tabla 2: Auditoría de Alertas
     story.append(Paragraph("<b>2. AUDITORÍA EN TIEMPO REAL Y ALERTAS</b>", styles['Heading2']))
     tabla_auditoria_data = [["Módulo / Verificación", "Entidad / Fuente", "Resultado / Estado", "Nivel Riesgo"]]
-    
     for item in datos["auditoria"]:
-        tabla_auditoria_data.append([
-            item["modulo"],
-            item["fuente"],
-            item["resultado"],
-            item["riesgo"]
-        ])
+        tabla_auditoria_data.append([item["modulo"], item["fuente"], item["resultado"], item["riesgo"]])
 
     t_auditoria = Table(tabla_auditoria_data, colWidths=[140, 110, 170, 100])
     t_auditoria.setStyle(TableStyle([
@@ -91,8 +94,14 @@ def descargar_pdf(placa: str = "W2G522"):
     ]))
     story.append(t_auditoria)
 
-    # 6. Construir PDF y retornar respuesta
+    # 6. Banner Footer
+    try:
+        story.append(Spacer(1, 15))
+        banner = Image("banner_footer.png", width=540, height=50)
+        story.append(banner)
+    except Exception:
+        pass
+
     doc.build(story)
     buffer.seek(0)
-    
     return Response(content=buffer.getvalue(), media_type="application/pdf")
