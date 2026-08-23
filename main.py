@@ -15,9 +15,17 @@ def home():
     with open("index.html", "r", encoding="utf-8") as f:
         return f.read()
 
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+import io
+from fastapi import Response
+from servicios_vehiculares import consultar_datos_vehiculo
+
 @app.get("/descargar-pdf")
 def descargar_pdf(placa: str = "AKI175"):
-    # 1. Traer datos en tiempo real de servicios_vehiculares.py
+    # 1. CONSULTA EN TIEMPO REAL
     datos = consultar_datos_vehiculo(placa)
     
     buffer = io.BytesIO()
@@ -29,22 +37,26 @@ def descargar_pdf(placa: str = "AKI175"):
     styles = getSampleStyleSheet()
     story = []
 
-    # 2. Agregar Logos (Encabezado)
+    # ==========================================
+    # PÁGINA 1: REPORTE VEHICULAR Y AUDITORÍA
+    # ==========================================
+
+    # Logos del Encabezado
     try:
         logo_izq = Image("logo_consultasano.png", width=140, height=40)
         logo_der = Image("logo_estudio.png", width=120, height=40)
-        tabla_encabezado = Table([[logo_izq, logo_der]], colWidths=[270, 270])
-        tabla_encabezado.setStyle(TableStyle([
+        header_table = Table([[logo_izq, logo_der]], colWidths=[270, 270])
+        header_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
             ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
-        story.append(tabla_encabezado)
+        story.append(header_table)
         story.append(Spacer(1, 15))
     except Exception as e:
-        print(f"No se pudieron cargar los logos: {e}")
+        print(f"[Aviso Logo]: {e}")
 
-    # 3. Título del Reporte
+    # Título del Reporte
     titulo_style = ParagraphStyle(
         'TituloReporte',
         parent=styles['Heading1'],
@@ -55,7 +67,7 @@ def descargar_pdf(placa: str = "AKI175"):
     story.append(Paragraph(f"<b>REPORTE VEHICULAR CONSOLIDADO - PLACA {datos['placa']}</b>", titulo_style))
     story.append(Spacer(1, 12))
 
-    # 4. Tabla 1: Datos Registrales SUNARP
+    # Tabla 1: Datos Registrales SUNARP (Dinámicos)
     story.append(Paragraph("<b>1. DATOS REGISTRALES (SUNARP)</b>", styles['Heading2']))
     tabla_sunarp_data = [
         ["Oficina Registral", datos["oficina_registral"], "Marca", datos["marca"]],
@@ -76,7 +88,7 @@ def descargar_pdf(placa: str = "AKI175"):
     story.append(t_sunarp)
     story.append(Spacer(1, 14))
 
-    # 5. Tabla 2: Auditoría de Alertas
+    # Tabla 2: Auditoría en Tiempo Real
     story.append(Paragraph("<b>2. AUDITORÍA EN TIEMPO REAL Y ALERTAS</b>", styles['Heading2']))
     tabla_auditoria_data = [["Módulo / Verificación", "Entidad / Fuente", "Resultado / Estado", "Nivel Riesgo"]]
     for item in datos["auditoria"]:
@@ -94,14 +106,35 @@ def descargar_pdf(placa: str = "AKI175"):
     ]))
     story.append(t_auditoria)
 
-    # 6. Banner Footer
+    # Banner Inferior de Página 1
     try:
         story.append(Spacer(1, 15))
-        banner = Image("banner_footer.png", width=540, height=50)
-        story.append(banner)
+        banner_p1 = Image("banner_footer.png", width=540, height=50)
+        story.append(banner_p1)
     except Exception:
         pass
 
+    # ==========================================
+    # SALTO A PÁGINA 2: SERVICIOS Y PUBLICIDAD
+    # ==========================================
+    story.append(PageBreak())
+
+    # Banner Estudio Córdova (Proporción 1/3)
+    try:
+        banner_estudio = Image("banner_estudio_cordova.png", width=540, height=220)
+        story.append(banner_estudio)
+        story.append(Spacer(1, 15))
+    except Exception as e:
+        print(f"[Aviso Banner Estudio]: {e}")
+
+    # Infografía de Servicios Vehiculares y Legales (Proporción 2/3)
+    try:
+        infografia_servicios = Image("infografia_servicios.png", width=540, height=440)
+        story.append(infografia_servicios)
+    except Exception as e:
+        print(f"[Aviso Infografía Servicios]: {e}")
+
+    # Construcción final del PDF
     doc.build(story)
     buffer.seek(0)
     return Response(content=buffer.getvalue(), media_type="application/pdf")
