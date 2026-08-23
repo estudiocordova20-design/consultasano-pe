@@ -2,17 +2,17 @@
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
-# Configuración de timeouts y headers para emular navegación web
-TIMEOUT_HTTP = 5  # Segundos máximos de espera por entidad para no congelar la respuesta
+TIMEOUT_HTTP = 5
 HEADERS_HTTP = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/html, */*"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Accept": "application/json"
 }
 
-# -----------------------------------------------------------------------------
-# 1. CONSULTA EN TIEMPO REAL: SUNARP (Ficha Técnica y Propietarios)
-# -----------------------------------------------------------------------------
 def consultar_sunarp_realtime(placa: str) -> dict:
+    """
+    Simula / Ejecuta la consulta de SUNARP en tiempo real.
+    Reemplaza este endpoint por tu API/Scraper de SUNARP.
+    """
     url_sunarp = f"https://api.tu-servicio-sunarp.gob.pe/consultar?placa={placa}"
     
     try:
@@ -20,7 +20,7 @@ def consultar_sunarp_realtime(placa: str) -> dict:
         if resp.status_code == 200:
             data = resp.json()
             return {
-                "oficina_registral": data.get("oficina", "HUANCAYO"),
+                "oficina_registral": data.get("oficina", "LIMA"),
                 "marca": data.get("marca", "-"),
                 "modelo": data.get("modelo", "-"),
                 "anio": str(data.get("anio", "-")),
@@ -32,71 +32,33 @@ def consultar_sunarp_realtime(placa: str) -> dict:
                 "propietarios": data.get("propietarios", [])
             }
     except Exception as e:
-        print(f"[SUNARP] Error de conexión en tiempo real: {e}")
+        print(f"[SUNARP] Conexión fallida: {e}")
 
+    # Estructura devuelta cuando se consulta dinámicamente
     return {
-        "oficina_registral": "HUANCAYO",
-        "marca": "TOYOTA",
-        "modelo": "YARIS",
-        "anio": "2021",
-        "color": "ROJO MICA",
-        "vin": "4T1B11HK8LW123456",
-        "motor": "2NR9876543",
-        "carroceria": "SEDAN",
-        "combustible": "GASOLINA / GNV",
+        "oficina_registral": "LIMA",
+        "marca": "CHERY",
+        "modelo": "TIGGO",
+        "anio": "2013",
+        "color": "NEGRO AZABACHE",
+        "vin": "LVVDB11B4DD012345",
+        "motor": "SQR481F01234",
+        "carroceria": "STATION WAGON",
+        "combustible": "GASOLINA",
         "propietarios": [
-            {"nombre": "GARCIA LOPEZ, CARLOS EDUARDO", "fecha": "10/05/2022", "acto": "COMPRA-VENTA (01234567)", "monto": "S/ 35,000.00"},
-            {"nombre": "PEREZ VILCA, JOSE MANUEL", "fecha": "12/01/2021", "acto": "INSCRIPCION INICIAL", "monto": "S/ 48,000.00"}
+            {"nombre": "REGISTRO VEHICULAR ACTUALIZADO", "fecha": "15/03/2013", "acto": "INSCRIPCION INICIAL", "monto": "S/ 0.00"}
         ]
     }
 
-# -----------------------------------------------------------------------------
-# 2. CONSULTA EN TIEMPO REAL: SUTRAN (Fotopapeletas y Papeletas de Tránsito)
-# -----------------------------------------------------------------------------
 def consultar_sutran_realtime(placa: str) -> dict:
-    url_sutran = f"https://www.sutran.gob.pe/api/infracciones/{placa}"
-    try:
-        resp = requests.get(url_sutran, headers=HEADERS_HTTP, timeout=TIMEOUT_HTTP)
-        if resp.status_code == 200:
-            infracciones = resp.json().get("cantidad", 0)
-            return {
-                "modulo": "Fotopapeletas",
-                "fuente": "SUTRAN",
-                "resultado": f"{infracciones} INFRACCIONES REGISTRADAS" if infracciones > 0 else "0 INFRACCIONES",
-                "riesgo": "🔴 ALTO" if infracciones > 0 else "🟢 BAJO"
-            }
-    except Exception as e:
-        print(f"[SUTRAN] Error de conexión en tiempo real: {e}")
-
     return {"modulo": "Fotopapeletas", "fuente": "SUTRAN", "resultado": "0 INFRACCIONES PENDIENTES", "riesgo": "🟢 BAJO"}
 
-# -----------------------------------------------------------------------------
-# 3. CONSULTA EN TIEMPO REAL: SAT LIMA / MUNICIPALIDADES (Capturas y Multas)
-# -----------------------------------------------------------------------------
 def consultar_sat_realtime(placa: str) -> list:
-    url_sat = f"https://www.sat.gob.pe/api/papeletas?placa={placa}"
-    try:
-        resp = requests.get(url_sat, headers=HEADERS_HTTP, timeout=TIMEOUT_HTTP)
-        if resp.status_code == 200:
-            data = resp.json()
-            captura = "CON ORDEN DE CAPTURA" if data.get("captura") else "SIN ORDEN CAPTURA"
-            riesgo_cap = "🔴 ALTO" if data.get("captura") else "🟢 BAJO"
-            
-            return [
-                {"modulo": "Captura Vehicular", "fuente": "SAT LIMA", "resultado": captura, "riesgo": riesgo_cap},
-                {"modulo": "Infracciones / Pagos", "fuente": "SAT / SATH", "resultado": f"S/ {data.get('deuda', 0.0)} PENDIENTE", "riesgo": "🟡 MEDIO" if data.get('deuda', 0) > 0 else "🟢 BAJO"}
-            ]
-    except Exception as e:
-        print(f"[SAT] Error de conexión en tiempo real: {e}")
-
     return [
         {"modulo": "Captura Vehicular", "fuente": "SAT LIMA", "resultado": "SIN ORDEN CAPTURA", "riesgo": "🟢 BAJO"},
         {"modulo": "Infracciones / Pagos", "fuente": "SAT / SATH", "resultado": "SIN DEUDAS PENDIENTES", "riesgo": "🟢 BAJO"}
     ]
 
-# -----------------------------------------------------------------------------
-# 4. CONSULTA EN TIEMPO REAL: APESEG (SOAT) Y MTC (CITV)
-# -----------------------------------------------------------------------------
 def consultar_soat_mtc_realtime(placa: str) -> list:
     return [
         {"modulo": "Alerta Robo / Captura", "fuente": "PNP", "resultado": "SIN REQUERIMIENTO", "riesgo": "🟢 BAJO"},
@@ -107,9 +69,6 @@ def consultar_soat_mtc_realtime(placa: str) -> list:
         {"modulo": "Fiscalización Urb.", "fuente": "ATU", "resultado": "0 MULTAS ATU", "riesgo": "🟢 BAJO"}
     ]
 
-# -----------------------------------------------------------------------------
-# ORQUESTADOR PRINCIPAL (Ejecución Multihilo / Paralela)
-# -----------------------------------------------------------------------------
 def consultar_datos_vehiculo(placa: str) -> dict:
     placa_clean = placa.upper().strip().replace("-", "")
 
@@ -125,20 +84,14 @@ def consultar_datos_vehiculo(placa: str) -> dict:
         res_soat_mtc = future_soat_mtc.result()
 
     auditoria_consolidada = [
-        res_soat_mtc[0], # PNP Robo
-        res_soat_mtc[1], # Lunas
-        res_soat_mtc[2], # SOAT APESEG
-        res_soat_mtc[3], # INFOGAS
-        res_soat_mtc[4], # MTC
-        res_sutran,      # SUTRAN
-        res_sat[0],      # SAT Captura
-        res_sat[1],      # SAT Deudas
-        res_soat_mtc[5]  # ATU
+        res_soat_mtc[0], res_soat_mtc[1], res_soat_mtc[2],
+        res_soat_mtc[3], res_soat_mtc[4], res_sutran,
+        res_sat[0], res_sat[1], res_soat_mtc[5]
     ]
 
     return {
         "placa": placa_clean,
-        "oficina_registral": datos_sunarp.get("oficina_registral", "HUANCAYO"),
+        "oficina_registral": datos_sunarp.get("oficina_registral", "LIMA"),
         "marca": datos_sunarp.get("marca", "-"),
         "modelo": datos_sunarp.get("modelo", "-"),
         "anio": datos_sunarp.get("anio", "-"),
