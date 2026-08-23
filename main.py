@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 import os
-import requests
+from generador_pdf import generar_pdf_consultasano
 
 app = FastAPI(title="ConsultaSano.pe API")
 
@@ -12,29 +12,39 @@ def home():
             return f.read()
     return "<h1>ConsultaSano.pe Activo</h1>"
 
-@app.get("/consultar")
-def consultar_placa(placa: str = Query(...), whatsapp: str = Query(...)):
+@app.get("/descargar-pdf")
+def descargar_pdf(placa: str = Query(...)):
     placa_clean = placa.upper().strip()
     
-    # Fuentes mapeadas para el barrido
-    fuentes_nacionales = {
-        "SUNARP": "https://www.sunarp.gob.pe/ConsultaVehicular/",
-        "SUNARP_SIGUELO": "https://siguelo.sunarp.gob.pe/siguelo/",
-        "MTC_CITV": "http://portal.mtc.gob.pe/reportedgtt/form/frmconsultaplacaitv.aspx",
-        "INFOGAS": f"http://infogas.com.pe/placa/?placa={placa_clean}",
-        "APESEG_SOAT": "https://www.apeseg.org.pe/consultas-soat/",
-        "LUNAS_POLARIZADAS": f"https://consultaspnp.com/?doc={placa_clean}&show_view=yes",
-        "SUTRAN_INFRACCIONES": "https://www.sutran.gob.pe/consultas/record-de-infracciones/record-de-infracciones/",
-        "SUTRAN_CINEMOMETRO": "https://webexterno.sutran.gob.pe/WebExterno/Pages/frmPapeletasCinemometro.aspx",
-        "ATU": "https://pasarela.atu.gob.pe/#",
-        "JNE_MULTAS": "https://multas.jne.gob.pe/login"
+    # Datos de prueba para estructurar el reporte oficial
+    datos_vehiculo = {
+        "placa": placa_clean,
+        "fecha_emision": "2026-08-22",
+        "estado_circulacion": "EN CIRCULACION",
+        "oficina_registral": "HUANCAYO",
+        "marca": "CHERY",
+        "modelo": "TIGGO",
+        "anio": 2013,
+        "color": "NEGRO AZABACHE",
+        "serie": "LVVDB11B9DD106355",
+        "motor": "SQR481FFFCL02315",
+        "carroceria": "SUV",
+        "combustible": "GASOLINA",
+        "propietario_actual": "CORDOVA PALOMINO RICHARD SEBASTIAN",
+        "partida": "60548021",
+        "acto": "COMPRA - VENTA",
+        "titulo_fecha": "03558353 - 2022",
+        "soat_estado": "VIGENTE (APESEG)",
+        "citv_estado": "APROBADO (MTC)",
+        "infogas_estado": "SIN CONVERSIÓN / REGISTRADO",
+        "sutran_estado": "0 PAPELETAS PENDIENTES",
+        "sat_estado": "SIN MULTAS GRAVES DETECTADAS"
     }
 
-    return {
-        "status": "processing",
-        "placa": placa_clean,
-        "whatsapp": whatsapp,
-        "mensaje": "Auditoría iniciada correctamente en todas las fuentes oficiales.",
-        "endpoints_evaluados": len(fuentes_nacionales),
-        "cobertura": "Nacional + Módulos Municipales Provinciales"
-    }
+    pdf_bytes = generar_pdf_consultasano(datos_vehiculo)
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=Reporte_ConsultaSano_{placa_clean}.pdf"}
+    )
