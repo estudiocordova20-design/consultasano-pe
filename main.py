@@ -2,7 +2,7 @@ from fastapi import FastAPI, Response
 from fastapi.responses import HTMLResponse
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from datetime import datetime
 import io
@@ -31,7 +31,7 @@ def descargar_pdf(placa: str = "W2G522"):
     
     styles = getSampleStyleSheet()
     
-    # ESTILOS REVISADOS Y OPTIMIZADOS
+    # ESTILOS DEL ENCABEZADO
     style_subtitle_burgundy = ParagraphStyle(
         'SubTitleBurgundy', 
         parent=styles['Normal'], 
@@ -57,8 +57,7 @@ def descargar_pdf(placa: str = "W2G522"):
     else:
         header_logo = Paragraph("<b><font size=16 color='#0A2240'>ConsultaSano.pe</font></b>", style_cell_bold)
 
-    # ENCABEZADO CON POSICIONES INVERTIDAS
-    # Columna 0: Datos de emisión (Izquierda) | Columna 1: Logo (Derecha)
+    # ENCABEZADO - PÁGINA 1
     header_data = [
         [
             Paragraph(f"<b>FECHA EMISIÓN:</b> {datetime.now().strftime('%Y-%m-%d')}<br/><b>PLACA AUDITADA:</b> {placa_clean}<br/><b>OFICINA REGISTRAL:</b> HUANCAYO", style_cell_bold),
@@ -75,7 +74,7 @@ def descargar_pdf(placa: str = "W2G522"):
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('ALIGN', (0,0), (0,0), 'LEFT'),
         ('ALIGN', (1,0), (1,0), 'RIGHT'),
-        ('SPAN', (0,1), (1,1)), # Título centrado abarcando el ancho total
+        ('SPAN', (0,1), (1,1)), 
         ('TOPPADDING', (0,1), (0,1), 6),
         ('BOTTOMPADDING', (0,1), (0,1), 4),
     ]))
@@ -172,14 +171,25 @@ def descargar_pdf(placa: str = "W2G522"):
     else:
         elements.append(t_sec)
 
-    elements.append(Spacer(1, 4))
+    # ---------------------------------------------------------
+    # SALTO A PÁGINA 2: PUBLICIDAD DIVIDIDA EN 3 SECCIONES (1/3 + 2/3)
+    # ---------------------------------------------------------
+    elements.append(PageBreak())
 
-    # 4. BANNER PUBLICITARIO AMPLIADO (ESTUDIO CÓRDOVA ABOGADOS)
-    elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#CCCCCC"), spaceAfter=4))
-    
+    # SECCIÓN 1/3 (ARRIBA): BANNER ESTUDIO CÓRDOVA
     if os.path.exists("banner_footer.png"):
-        banner_img = Image("banner_footer.png", width=540, height=180)
+        banner_img = Image("banner_footer.png", width=540, height=220)
         elements.append(banner_img)
+
+    elements.append(Spacer(1, 12))
+
+    # SECCIÓN 2/3 (ABAJO): SERVICIOS VEHICULARES Y LEGALES
+    if os.path.exists("servicios_vehiculares.jpg"):
+        servicios_img = Image("servicios_vehiculares.jpg", width=540, height=470)
+        elements.append(servicios_img)
+    elif os.path.exists("servicios_vehiculares.png"):
+        servicios_img = Image("servicios_vehiculares.png", width=540, height=470)
+        elements.append(servicios_img)
 
     # CONSTRUIR PDF
     doc.build(elements)
