@@ -40,7 +40,7 @@
             <form onsubmit="procesarConsultaGratis(event)" class="space-y-4">
                 <div>
                     <label class="block text-left text-xs font-bold text-brand-blue mb-1">INGRESA LA PLACA:</label>
-                    <input type="text" id="input-placa" placeholder="W2G542" maxlength="6" required class="w-full text-center uppercase font-mono text-3xl p-3 rounded-xl bg-slate-50 border-2 border-slate-300 focus:border-brand-green outline-none font-bold tracking-widest text-brand-blue">
+                    <input type="text" id="input-placa" placeholder="W2G522" maxlength="6" required class="w-full text-center uppercase font-mono text-3xl p-3 rounded-xl bg-slate-50 border-2 border-slate-300 focus:border-brand-green outline-none font-bold tracking-widest text-brand-blue">
                 </div>
 
                 <div>
@@ -57,7 +57,6 @@
         <!-- PASO 2: VISTA PREVIA GRATUITA + BLOQUEO FREEMIUM -->
         <div id="step-2" class="hidden space-y-4">
             
-            <!-- Resumen Gratuito Desbloqueado -->
             <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
                 <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
                     <span class="text-xs font-extrabold text-brand-green bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
@@ -68,14 +67,13 @@
 
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Datos Básicos SUNARP (Gratis)</h3>
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Marca:</strong> <span id="res-marca">CHERY</span></div>
-                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Modelo:</strong> <span id="res-modelo">TIGGO</span></div>
-                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Color:</strong> <span id="res-color">NEGRO AZABACHE</span></div>
-                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Año Fab:</strong> <span id="res-anio">2013</span></div>
+                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Marca:</strong> CHERY</div>
+                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Modelo:</strong> TIGGO</div>
+                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Color:</strong> NEGRO AZABACHE</div>
+                    <div class="bg-slate-50 p-2 rounded-lg"><strong>Año Fab:</strong> 2013</div>
                 </div>
             </div>
 
-            <!-- Secciones Bloqueadas (Efecto Blur) -->
             <div class="bg-white p-5 rounded-2xl shadow-md border border-slate-200 relative overflow-hidden">
                 <h3 class="text-xs font-bold text-brand-blue uppercase tracking-wider mb-2 flex items-center gap-1">
                     <span>👥 Propietarios y Tracto Sucesivo</span>
@@ -101,10 +99,9 @@
                     </div>
                 </div>
 
-                <!-- Call To Action para Desbloquear -->
                 <div class="mt-5 bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-200 text-center">
                     <p class="text-xs font-extrabold text-amber-900 mb-1">¿Quieres ver la auditoría completa?</p>
-                    <p class="text-xs text-amber-700 mb-3">Obtén el historial de propietarios, montos de transferencia, multas detalladas y el reporte PDF en tu WhatsApp.</p>
+                    <p class="text-xs text-amber-700 mb-3">Obtén el historial de propietarios, montos de transferencia, multas detalladas y el reporte PDF.</p>
                     
                     <button onclick="irAPagar()" class="w-full bg-brand-yellow hover:bg-amber-500 text-brand-blue font-black py-3.5 rounded-xl text-base shadow-lg transition animate-pulse">
                         🔓 DESBLOQUEAR INFORME COMPLETO (S/ 9.90)
@@ -126,7 +123,7 @@
                 <p class="text-xs font-bold text-brand-blue mt-2">Titular: ConsultaSano PE</p>
             </div>
 
-            <button onclick="confirmarPago()" class="w-full bg-brand-green hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-base shadow-md transition">
+            <button type="button" onclick="confirmarPago()" class="w-full bg-brand-green hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-base shadow-md transition">
                 ✅ Ya realicé el pago
             </button>
         </div>
@@ -141,7 +138,7 @@
                 📥 DESCARGAR INFORME PDF
             </a>
             
-            <p class="text-xs text-slate-400">También lo hemos programado para enviarse al WhatsApp indicado.</p>
+            <p class="text-xs text-slate-400">Generado en tiempo real por ConsultaSano.pe</p>
         </div>
 
     </main>
@@ -151,8 +148,8 @@
     </footer>
 
     <script>
-        let currentPlaca = "";
-        let currentPhone = "";
+        var currentPlaca = "";
+        var currentPhone = "";
 
         function procesarConsultaGratis(e) {
             e.preventDefault();
@@ -161,7 +158,6 @@
 
             document.getElementById('res-placa').innerText = currentPlaca;
 
-            // Transición a la vista previa gratuita
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
         }
@@ -172,11 +168,7 @@
         }
 
         function confirmarPago() {
-            document.getElementById('lbl-phone').innerText = currentPhone;
-            
-            // Asignar enlace directo de descarga en el botón
-            document.getElementById('btn-download').href = `/descargar-pdf?placa=${currentPlaca}`;
-
+            document.getElementById('btn-download').href = "/descargar-pdf?placa=" + encodeURIComponent(currentPlaca);
             document.getElementById('step-3').classList.add('hidden');
             document.getElementById('step-4').classList.remove('hidden');
         }
