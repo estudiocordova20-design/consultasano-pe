@@ -1,31 +1,25 @@
-from fastapi import FastAPI, Response
-from fastapi.responses import HTMLResponse
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image, PageBreak
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from datetime import datetime
 import io
 import os
-from servicios_vehiculares import consultar_datos_vehiculo
-app = FastAPI()
-
-@app.get("/", response_class=HTMLResponse)
-def home():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
-
+import requests
+from fastapi import FastAPI, Response
+from fastapi.responses import HTMLResponse
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-import io
-from fastapi import Response
+
 from servicios_vehiculares import consultar_datos_vehiculo
+
+app = FastAPI()
+
+@app.get("/", response_class=HTMLResponse)
+def index():
+    with open("index.html", "r", encoding="utf-8") as f:
+        return f.read()
 
 @app.get("/descargar-pdf")
 def descargar_pdf(placa: str = "AKI175"):
-    # 1. CONSULTA EN TIEMPO REAL
+    # 1. Obtener datos dinámicos en tiempo real
     datos = consultar_datos_vehiculo(placa)
     
     buffer = io.BytesIO()
@@ -41,22 +35,23 @@ def descargar_pdf(placa: str = "AKI175"):
     # PÁGINA 1: REPORTE VEHICULAR Y AUDITORÍA
     # ==========================================
 
-    # Logos del Encabezado
-    try:
-        logo_izq = Image("logo_consultasano.png", width=140, height=40)
-        logo_der = Image("logo_estudio.png", width=120, height=40)
-        header_table = Table([[logo_izq, logo_der]], colWidths=[270, 270])
-        header_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ]))
-        story.append(header_table)
-        story.append(Spacer(1, 15))
-    except Exception as e:
-        print(f"[Aviso Logo]: {e}")
+    # Encabezado con Logos
+    if os.path.exists("logo_consultasano.png") and os.path.exists("logo_estudio.png"):
+        try:
+            logo_izq = Image("logo_consultasano.png", width=140, height=40)
+            logo_der = Image("logo_estudio.png", width=120, height=40)
+            header_table = Table([[logo_izq, logo_der]], colWidths=[270, 270])
+            header_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+                ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            story.append(header_table)
+            story.append(Spacer(1, 10))
+        except Exception as e:
+            print(f"Error cargando logos: {e}")
 
-    # Título del Reporte
+    # Título principal
     titulo_style = ParagraphStyle(
         'TituloReporte',
         parent=styles['Heading1'],
@@ -65,9 +60,9 @@ def descargar_pdf(placa: str = "AKI175"):
         alignment=1
     )
     story.append(Paragraph(f"<b>REPORTE VEHICULAR CONSOLIDADO - PLACA {datos['placa']}</b>", titulo_style))
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 10))
 
-    # Tabla 1: Datos Registrales SUNARP (Dinámicos)
+    # Tabla 1: SUNARP (Datos en Vivo)
     story.append(Paragraph("<b>1. DATOS REGISTRALES (SUNARP)</b>", styles['Heading2']))
     tabla_sunarp_data = [
         ["Oficina Registral", datos["oficina_registral"], "Marca", datos["marca"]],
@@ -86,7 +81,7 @@ def descargar_pdf(placa: str = "AKI175"):
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     story.append(t_sunarp)
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 12))
 
     # Tabla 2: Auditoría en Tiempo Real
     story.append(Paragraph("<b>2. AUDITORÍA EN TIEMPO REAL Y ALERTAS</b>", styles['Heading2']))
@@ -106,35 +101,35 @@ def descargar_pdf(placa: str = "AKI175"):
     ]))
     story.append(t_auditoria)
 
-    # Banner Inferior de Página 1
-    try:
-        story.append(Spacer(1, 15))
-        banner_p1 = Image("banner_footer.png", width=540, height=50)
-        story.append(banner_p1)
-    except Exception:
-        pass
+    # Banner Footer Página 1
+    if os.path.exists("banner_footer.png"):
+        try:
+            story.append(Spacer(1, 10))
+            story.append(Image("banner_footer.png", width=540, height=45))
+        except Exception:
+            pass
 
     # ==========================================
-    # SALTO A PÁGINA 2: SERVICIOS Y PUBLICIDAD
+    # SALTO A PÁGINA 2: PUBLICIDAD Y SERVICIOS
     # ==========================================
     story.append(PageBreak())
 
-    # Banner Estudio Córdova (Proporción 1/3)
-    try:
-        banner_estudio = Image("banner_estudio_cordova.png", width=540, height=220)
-        story.append(banner_estudio)
-        story.append(Spacer(1, 15))
-    except Exception as e:
-        print(f"[Aviso Banner Estudio]: {e}")
+    # Banner 1/3: Estudio Córdova
+    if os.path.exists("banner_estudio_cordova.png"):
+        try:
+            story.append(Image("banner_estudio_cordova.png", width=540, height=210))
+            story.append(Spacer(1, 10))
+        except Exception as e:
+            print(f"Error cargando banner estudio: {e}")
 
-    # Infografía de Servicios Vehiculares y Legales (Proporción 2/3)
-    try:
-        infografia_servicios = Image("infografia_servicios.png", width=540, height=440)
-        story.append(infografia_servicios)
-    except Exception as e:
-        print(f"[Aviso Infografía Servicios]: {e}")
+    # Infografía 2/3: Servicios Vehiculares y Legales
+    if os.path.exists("infografia_servicios.png"):
+        try:
+            story.append(Image("infografia_servicios.png", width=540, height=430))
+        except Exception as e:
+            print(f"Error cargando infografía: {e}")
 
-    # Construcción final del PDF
+    # Construir PDF
     doc.build(story)
     buffer.seek(0)
     return Response(content=buffer.getvalue(), media_type="application/pdf")
