@@ -32,7 +32,16 @@ def descargar_pdf(placa: str = "W2G522"):
     styles = getSampleStyleSheet()
     
     # ESTILOS DEL ENCABEZADO MEJORADOS
-    style_subtitle_bold = ParagraphStyle('SubTitleBold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, leading=13, textColor=colors.HexColor("#0A2240"))
+    style_subtitle_burgundy = ParagraphStyle(
+        'SubTitleBurgundy', 
+        parent=styles['Normal'], 
+        fontName='Helvetica-Bold', 
+        fontSize=11, 
+        leading=14, 
+        textColor=colors.HexColor("#800020"), # COLOR GUINDO OSCURO
+        alignment=1 # CENTRADO
+    )
+    
     style_sec_header = ParagraphStyle('SecHeader', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, leading=12, textColor=colors.white)
     style_cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.HexColor("#0A2240"))
     style_cell_normal = ParagraphStyle('CellNormal', parent=styles['Normal'], fontName='Helvetica', fontSize=8, leading=10, textColor=colors.HexColor("#333333"))
@@ -42,33 +51,36 @@ def descargar_pdf(placa: str = "W2G522"):
 
     elements = []
 
-    # Cargar Logo Principal
+    # Cargar Logo Principal con mayor altura y ancho para legibilidad
     if os.path.exists("logo_consultasano.png"):
-        header_logo = Image("logo_consultasano.png", width=190, height=75)
+        header_logo = Image("logo_consultasano.png", width=240, height=110)
     else:
         header_logo = Paragraph("<b><font size=16 color='#0A2240'>ConsultaSano.pe</font></b>", style_cell_bold)
 
-    # ENCABEZADO CON DISEÑO FORMAL Y ELEGANTE
+    # ENCABEZADO CON DISEÑO FORMAL Y CENTRADO
     header_data = [
         [
             header_logo,
             Paragraph(f"<b>FECHA EMISIÓN:</b> {datetime.now().strftime('%Y-%m-%d')}<br/><b>PLACA AUDITADA:</b> {placa_clean}<br/><b>OFICINA REGISTRAL:</b> HUANCAYO", style_cell_bold)
         ],
         [
-            Paragraph("INFORME OFICIAL DE AUDITORÍA VEHICULAR INTEGRAL", style_subtitle_bold),
+            Paragraph("INFORME OFICIAL DE AUDITORÍA Y SEGUIMIENTO DE INFRACCIONES VEHICULAR", style_subtitle_burgundy),
             Paragraph("", style_cell_normal)
         ]
     ]
-    header_table = Table(header_data, colWidths=[330, 210])
+    
+    header_table = Table(header_data, colWidths=[310, 230])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('ALIGN', (1,0), (1,0), 'RIGHT'),
-        ('SPAN', (0,1), (1,1)),  # Expande el título del informe a todo el ancho
-        ('TOPPADDING', (0,1), (0,1), 4),
+        ('SPAN', (0,1), (1,1)), # Expande el título del informe a todo el ancho centrado
+        ('TOPPADDING', (0,1), (0,1), 6),
+        ('BOTTOMPADDING', (0,1), (0,1), 4),
     ]))
+    
     elements.append(header_table)
-    elements.append(Spacer(1, 4))
-    elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#0A2240"), spaceAfter=6))
+    elements.append(Spacer(1, 2))
+    elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#800020"), spaceAfter=6))
 
     # 1. FICHA TÉCNICA REGISTRAL (SUNARP)
     elements.append(Table([[Paragraph("1. FICHA TÉCNICA REGISTRAL (SUNARP)", style_sec_header)]], colWidths=[540], style=[('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#0A2240")), ('BOTTOMPADDING', (0,0), (-1,-1), 2), ('TOPPADDING', (0,0), (-1,-1), 2)]))
